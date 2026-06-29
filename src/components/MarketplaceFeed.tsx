@@ -22,10 +22,22 @@ export default function MarketplaceFeed() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordStatus, setPasswordStatus] = useState('')
   const [showPasswordForm, setShowPasswordForm] = useState(false)
+  
+  // Check if the user already configured a password previously
+  const [hasPasswordAlready, setHasPasswordAlready] = useState(true) 
 
   useEffect(() => {
     fetchListings()
+    checkUserPasswordStatus()
   }, [])
+
+  const checkUserPasswordStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    // If user metadata doesn't explicitly have has_password set to true, show the banner
+    if (user && !user.user_metadata?.has_password) {
+      setHasPasswordAlready(false)
+    }
+  }
 
   const fetchListings = async () => {
     setLoading(true)
@@ -52,17 +64,22 @@ export default function MarketplaceFeed() {
     setPasswordLoading(true)
     setPasswordStatus('')
 
-    // This updates the currently logged-in user's account password in Supabase Auth
+    // 1. Update the password AND store a custom metadata flag at the same time
     const { error } = await supabase.auth.updateUser({
-      password: newPassword
+      password: newPassword,
+      data: { has_password: true } 
     })
 
     if (error) {
       setPasswordStatus(`Error: ${error.message}`)
     } else {
-      setPasswordStatus('Permanent password set successfully! You can use this next time.')
+      setPasswordStatus('Permanent password set successfully!')
       setNewPassword('')
-      setTimeout(() => setShowPasswordForm(false), 3000)
+      // 2. Hide the entire banner block gracefully
+      setTimeout(() => {
+        setHasPasswordAlready(true)
+        setShowPasswordForm(false)
+      }, 2000)
     }
     setPasswordLoading(false)
   }
@@ -78,62 +95,64 @@ export default function MarketplaceFeed() {
   return (
     <div className="max-w-4xl mx-auto px-4 font-sans">
       
-      {/* Permanent Password Setup Banner */}
-      <div className="mb-6 bg-card border border-border rounded-lg p-4 shadow-sm">
-        {!showPasswordForm ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h4 className="font-bold text-foreground text-sm">Tired of logging in with email links?</h4>
-              <p className="text-xs text-muted-foreground">Set a permanent password for instant login next time.</p>
-            </div>
-            <button
-              onClick={() => setShowPasswordForm(true)}
-              className="text-xs font-bold bg-primary text-primary-foreground border border-ring px-3 py-1.5 rounded-md hover:opacity-90 transition-all self-start sm:self-center"
-            >
-              Set Password
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleUpdatePassword} className="space-y-3">
-            <div className="flex flex-col sm:flex-row gap-2 items-end">
-              <div className="flex-1 text-left w-full">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 font-mono">
-                  Create Permanent Password
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
-                  required
-                  className="w-full px-3 py-2 bg-background text-foreground text-sm rounded-md border border-input focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                />
+      {/* Permanent Password Setup Banner - Only shows if user hasn't set one yet */}
+      {!hasPasswordAlready && (
+        <div className="mb-6 bg-card border border-border rounded-lg p-4 shadow-sm">
+          {!showPasswordForm ? (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-foreground text-sm">Tired of logging in with email links?</h4>
+                <p className="text-xs text-muted-foreground">Set a permanent password for instant login next time.</p>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="flex-1 sm:flex-none text-xs font-bold bg-primary text-primary-foreground border border-ring px-4 py-2 rounded-md hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground"
-                >
-                  {passwordLoading ? 'Saving...' : 'Save Password'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowPasswordForm(false); setPasswordStatus(''); }}
-                  className="text-xs font-bold border border-border bg-background text-foreground px-3 py-2 rounded-md hover:bg-muted"
-                >
-                  Cancel
-                </button>
-              </div>
+              <button
+                onClick={() => setShowPasswordForm(true)}
+                className="text-xs font-bold bg-primary text-primary-foreground border border-ring px-3 py-1.5 rounded-md hover:opacity-90 transition-all self-start sm:self-center"
+              >
+                Set Password
+              </button>
             </div>
-            {passwordStatus && (
-              <p className="text-xs font-mono font-medium text-foreground bg-accent border border-border p-2 rounded mt-1">
-                {passwordStatus}
-              </p>
-            )}
-          </form>
-        )}
-      </div>
+          ) : (
+            <form onSubmit={handleUpdatePassword} className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2 items-end">
+                <div className="flex-1 text-left w-full">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 font-mono">
+                    Create Permanent Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    required
+                    className="w-full px-3 py-2 bg-background text-foreground text-sm rounded-md border border-input focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  />
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                  <button
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="flex-1 sm:flex-none text-xs font-bold bg-primary text-primary-foreground border border-ring px-4 py-2 rounded-md hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground"
+                  >
+                    {passwordLoading ? 'Saving...' : 'Save Password'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowPasswordForm(false); setPasswordStatus(''); }}
+                    className="text-xs font-bold border border-border bg-background text-foreground px-3 py-2 rounded-md hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              {passwordStatus && (
+                <p className="text-xs font-mono font-medium text-foreground bg-accent border border-border p-2 rounded mt-1">
+                  {passwordStatus}
+                </p>
+              )}
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Dynamic Category Filter Pills */}
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
