@@ -52,22 +52,22 @@ export default function Login() {
           Buy & Sell JIIT
         </h1>
         <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-          The hyper-local campus marketplace.<br />
+          The local campus marketplace.<br />
           <span className="font-mono text-xs font-bold uppercase tracking-wider bg-accent text-accent-foreground border border-border px-1.5 py-0.5 rounded mt-1 inline-block">
-            Exclusive to JIIT Noida
+            For JIIT Noida
           </span>
         </p>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="text-left">
             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 font-mono">
-              Student Email Address
+             Enter Student Email Address (For New Users)
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="enrollment@mail.jiit.ac.in"
+              placeholder=" eg. 2501030085@mail.jiit.ac.in"
               required
               className="w-full px-4 py-3 bg-background text-foreground font-medium rounded-md border border-input focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all placeholder:text-muted-foreground/60 text-base"
             />
@@ -109,7 +109,7 @@ export default function Login() {
             onClick={() => setUsePassword(!usePassword)}
             className="text-xs font-mono text-muted-foreground hover:text-foreground underline decoration-dotted"
           >
-            {usePassword ? "NEW USER? Switch to Magic Link Email Login" : "Switch to Dev Password Login"}
+            {usePassword ? "New User? Switch to Magic Link Email Login" : "Old User? Switch to  Password Login"}
           </button>
         </div>
 
