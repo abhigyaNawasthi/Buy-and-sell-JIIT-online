@@ -61,10 +61,12 @@ export default function UserProfile() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
+        // We pass the email along with the profile state to satisfy the database constraint
         const { error } = await supabase
           .from('profiles')
           .upsert({
             id: user.id,
+            email: user.email, 
             ...profile,
             updated_at: new Date().toISOString()
           })
@@ -73,9 +75,8 @@ export default function UserProfile() {
         setMessage('Profile details updated successfully!')
       }
     } catch (err: any) {
-      // Instead of err.message, we give them a clean UI message
-      console.error("Database Error:", err.message) // Keep it in console for you (the dev)
-      setMessage("Oops! We couldn't save your profile details. Please try again.") // Show this to the user
+      console.error("Database Error:", err.message)
+      setMessage("Oops! We couldn't save your profile details. Please try again.")
     } finally {
       setUpdating(false)
     }
