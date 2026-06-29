@@ -109,7 +109,7 @@ export default function Login() {
             onClick={() => setUsePassword(!usePassword)}
             className="text-xs font-mono text-muted-foreground hover:text-foreground underline decoration-dotted"
           >
-            {usePassword ? "Switch to Magic Link Email Login" : "Switch to Dev Password Login"}
+            {usePassword ? "NEW USER? Switch to Magic Link Email Login" : "Switch to Dev Password Login"}
           </button>
         </div>
 
