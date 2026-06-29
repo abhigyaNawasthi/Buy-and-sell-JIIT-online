@@ -73,7 +73,9 @@ export default function UserProfile() {
         setMessage('Profile details updated successfully!')
       }
     } catch (err: any) {
-      setMessage(`Error: ${err.message}`)
+      // Instead of err.message, we give them a clean UI message
+      console.error("Database Error:", err.message) // Keep it in console for you (the dev)
+      setMessage("Oops! We couldn't save your profile details. Please try again.") // Show this to the user
     } finally {
       setUpdating(false)
     }

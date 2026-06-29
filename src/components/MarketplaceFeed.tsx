@@ -33,9 +33,22 @@ export default function MarketplaceFeed() {
 
   const checkUserPasswordStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    // If user metadata doesn't explicitly have has_password set to true, show the banner
-    if (user && !user.user_metadata?.has_password) {
-      setHasPasswordAlready(false)
+    
+    if (user) {
+      const hasPass = user.user_metadata?.has_password
+      const createdAt = new Date(user.created_at).getTime()
+      const now = new Date().getTime()
+      
+      // Calculate how many hours ago the account was created
+      const hoursOld = (now - createdAt) / (1000 * 60 * 60)
+
+      // Show banner ONLY if they have no password AND the account is less than 72 hours old
+      if (!hasPass && hoursOld < 72) {
+        setHasPasswordAlready(false)
+      } else {
+        // For old users (older than 72h) or users who already set a password, keep it hidden
+        setHasPasswordAlready(true)
+      }
     }
   }
 
@@ -95,7 +108,7 @@ export default function MarketplaceFeed() {
   return (
     <div className="max-w-4xl mx-auto px-4 font-sans">
       
-      {/* Permanent Password Setup Banner - Only shows if user hasn't set one yet */}
+      {/* Permanent Password Setup Banner - Only shows if user hasn't set one yet and is new */}
       {!hasPasswordAlready && (
         <div className="mb-6 bg-card border border-border rounded-lg p-4 shadow-sm">
           {!showPasswordForm ? (
