@@ -16,6 +16,12 @@ export default function MarketplaceFeed() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [categoryFilter, setCategoryFilter] = useState('All')
+  
+  // Password setting states
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordStatus, setPasswordStatus] = useState('')
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
 
   useEffect(() => {
     fetchListings()
@@ -36,6 +42,31 @@ export default function MarketplaceFeed() {
     setLoading(false)
   }
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newPassword.length < 6) {
+      setPasswordStatus('Password must be at least 6 characters.')
+      return
+    }
+
+    setPasswordLoading(true)
+    setPasswordStatus('')
+
+    // This updates the currently logged-in user's account password in Supabase Auth
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    })
+
+    if (error) {
+      setPasswordStatus(`Error: ${error.message}`)
+    } else {
+      setPasswordStatus('Permanent password set successfully! You can use this next time.')
+      setNewPassword('')
+      setTimeout(() => setShowPasswordForm(false), 3000)
+    }
+    setPasswordLoading(false)
+  }
+
   const filteredListings = categoryFilter === 'All' 
     ? listings 
     : listings.filter(item => item.category === categoryFilter)
@@ -46,6 +77,64 @@ export default function MarketplaceFeed() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 font-sans">
+      
+      {/* Permanent Password Setup Banner */}
+      <div className="mb-6 bg-card border border-border rounded-lg p-4 shadow-sm">
+        {!showPasswordForm ? (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="font-bold text-foreground text-sm">Tired of logging in with email links?</h4>
+              <p className="text-xs text-muted-foreground">Set a permanent password for instant login next time.</p>
+            </div>
+            <button
+              onClick={() => setShowPasswordForm(true)}
+              className="text-xs font-bold bg-primary text-primary-foreground border border-ring px-3 py-1.5 rounded-md hover:opacity-90 transition-all self-start sm:self-center"
+            >
+              Set Password
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleUpdatePassword} className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2 items-end">
+              <div className="flex-1 text-left w-full">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 font-mono">
+                  Create Permanent Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  required
+                  className="w-full px-3 py-2 bg-background text-foreground text-sm rounded-md border border-input focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex-1 sm:flex-none text-xs font-bold bg-primary text-primary-foreground border border-ring px-4 py-2 rounded-md hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground"
+                >
+                  {passwordLoading ? 'Saving...' : 'Save Password'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowPasswordForm(false); setPasswordStatus(''); }}
+                  className="text-xs font-bold border border-border bg-background text-foreground px-3 py-2 rounded-md hover:bg-muted"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+            {passwordStatus && (
+              <p className="text-xs font-mono font-medium text-foreground bg-accent border border-border p-2 rounded mt-1">
+                {passwordStatus}
+              </p>
+            )}
+          </form>
+        )}
+      </div>
+
       {/* Dynamic Category Filter Pills */}
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
         {['All', 'Textbooks', 'Electronics', 'Campus Essentials', 'Others'].map((cat) => (
@@ -75,7 +164,6 @@ export default function MarketplaceFeed() {
               key={item.id} 
               className="bg-card border border-border rounded-lg p-4 shadow-sm flex flex-col sm:flex-row gap-4 hover:border-ring transition-all duration-200"
             >
-              {/* Product Thumbnail Container */}
               <div className="w-full sm:w-32 h-32 bg-background border border-border rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center shadow-inner">
                 {item.image_url ? (
                   <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
@@ -84,7 +172,6 @@ export default function MarketplaceFeed() {
                 )}
               </div>
 
-              {/* Item Metadata Details */}
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-start justify-between gap-2">
@@ -92,7 +179,6 @@ export default function MarketplaceFeed() {
                     <span className="text-xl font-black text-foreground font-mono">₹{item.price}</span>
                   </div>
                   
-                  {/* Category Badge */}
                   <span className="inline-block text-xs font-bold tracking-wide bg-accent text-accent-foreground border border-border px-2.5 py-0.5 rounded-md mt-1 font-mono">
                     {item.category}
                   </span>
@@ -102,7 +188,6 @@ export default function MarketplaceFeed() {
                   </p>
                 </div>
 
-                {/* Secure External Action Handlers */}
                 <div className="mt-4 sm:mt-0 flex justify-end">
                   <a
                     href={`https://wa.me/${item.whatsapp_number.replace(/\D/g, '')}?text=Hi,%20I'm%20interested%20in%20buying%20your%20${encodeURIComponent(item.title)}%20listed%20on%20JIIT%20Buy%20%26%20Sell.`}
